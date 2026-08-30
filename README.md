@@ -1,4 +1,4 @@
-# JsonParser
+# Parser
 A Lexer (Tokenizer) converts JSON characters into Tokens, while the Parser uses those tokens to build the JSON structure.
 ## Token Types
 PUNCT → { } [ ] , :
