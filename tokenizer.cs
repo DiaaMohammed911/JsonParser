@@ -192,7 +192,61 @@ public class JsonTokenizer
                     case 'f':
                         sb.Append('\f');
                         break;
+                    case 'u':
+                        if (_i + 10 < _src.Length &&
+                            _src[_i + 5] == '\\' &&
+                            _src[_i + 6] == 'u')
+                        {
+                            string pair1 = _src[(_i + 1)..(_i + 5)];
+                            string pair2 = _src[(_i + 7)..(_i + 11)];
 
+                            if (!int.TryParse(
+                                    pair1,
+                                    System.Globalization.NumberStyles.HexNumber,
+                                    null,
+                                    out int hi))
+                                throw new Exception("invalid unicode escape");
+
+                            if (!int.TryParse(
+                                    pair2,
+                                    System.Globalization.NumberStyles.HexNumber,
+                                    null,
+                                    out int lo))
+                                throw new Exception("invalid unicode escape");
+                            if (hi < 0xD800 || hi > 0xDBFF)
+                                throw new Exception("invalid high surrogate");
+                            if (lo < 0xDC00 || lo > 0xDFFF)
+                                throw new Exception("invalid low surrogate");
+
+                            int codePoint =
+                                0x10000 +
+                                ((hi - 0xD800) << 10) +
+                                (lo - 0xDC00);
+
+                            sb.Append(char.ConvertFromUtf32(codePoint));
+
+                            _i += 10;
+                        }
+                        else
+                        {
+                            if (_i + 4 >= _src.Length)
+                                throw new Exception("unterminated string");
+
+                            string hex = _src[(_i + 1)..(_i + 5)];
+
+                            if (!int.TryParse(hex,System.Globalization.NumberStyles.HexNumber,null,out int codePoint))
+                                throw new Exception("invalid unicode escape");
+                            if (codePoint >= 0xD800 && codePoint <= 0xDBFF)
+                                throw new Exception("unpaired high surrogate");
+                            if (codePoint >= 0xDC00 && codePoint <= 0xDFFF)
+                                throw new Exception("unpaired low surrogate");
+
+                            sb.Append(char.ConvertFromUtf32(codePoint));
+
+                            _i += 4;
+                        }
+
+                        break;
                     default:
                         throw new Exception(
                             $"invalid escape '\\{escaped}'"
