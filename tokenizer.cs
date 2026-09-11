@@ -245,7 +245,6 @@ public class JsonTokenizer
 
                             _i += 4;
                         }
-
                         break;
                     default:
                         throw new Exception(
