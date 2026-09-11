@@ -1,19 +1,21 @@
-﻿string input = Console.ReadLine();
-
-try
-{
-    var tokenizer = new JsonTokenizer(input);
-    var tokens = tokenizer.Tokenize();
-
-    foreach (var token in tokens)
+﻿        Test("42");
+        Test("3.14");
+        Test("1e3");
+        Test("\"hello\"");
+        Test("true");
+        Test("false");
+        Test("null");
+    static void Test(string json)
     {
-        if (token.Type == TokenType.EOF)
-            Console.WriteLine("EOF");
-        else
-            Console.WriteLine($"{token.Type} {token.Value}");
+        Console.WriteLine($"JSON: {json}");
+
+        var tokenizer = new JsonTokenizer(json);
+        var tokens = tokenizer.Tokenize();
+
+        var parser = new JsonParser(tokens);
+        var result = parser.ParseValue();
+
+        Console.WriteLine($"Result: {result}");
+        Console.WriteLine($"Type: {result?.GetType().Name ?? "null"}");
+        Console.WriteLine("--------------------");
     }
-}
-catch (Exception ex)
-{
-    Console.WriteLine($"ERR {ex.Message}");
-}
