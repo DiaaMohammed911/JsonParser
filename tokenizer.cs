@@ -26,6 +26,7 @@ public class Token
 }
 public class JsonTokenizer
 {
+
     private readonly string _src;
     private int _i = 0;
 
@@ -103,14 +104,14 @@ public class JsonTokenizer
         if (_src[_i] == '-')
             _i++;
 
-        while (_i < _src.Length && char.IsDigit(_src[_i]))
+        while (_i < _src.Length && JsonNumberValidator.IsDigit(_src[_i]))
             _i++;
 
         if (_i < _src.Length && _src[_i] == '.')
         {
             _i++;
 
-            while (_i < _src.Length && char.IsDigit(_src[_i]))
+            while (_i < _src.Length && JsonNumberValidator.IsDigit(_src[_i]))
                 _i++;
         }
 
@@ -125,13 +126,17 @@ public class JsonTokenizer
                 _i++;
             }
 
-            while (_i < _src.Length && char.IsDigit(_src[_i]))
+            while (_i < _src.Length && JsonNumberValidator.IsDigit(_src[_i]))
                 _i++;
         }
 
         string value = _src[start.._i];
+        if (JsonNumberValidator.IsValid(value))
+        {
 
-        return new Token(TokenType.NUMBER, value);
+            return new Token(TokenType.NUMBER, value);
+        }
+        throw new Exception("invalid number");
     }
 
     private Token ReadString()

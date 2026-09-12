@@ -1,10 +1,10 @@
-﻿        Test("42");
-        Test("3.14");
-        Test("1e3");
-        Test("\"hello\"");
-        Test("true");
-        Test("false");
-        Test("null");
+﻿        //Test("+5");
+        //Test("01");
+        Test(".5");
+        Test("5.");
+        Test("--5");
+        Test("5e+");
+
     static void Test(string json)
     {
         Console.WriteLine($"JSON: {json}");
