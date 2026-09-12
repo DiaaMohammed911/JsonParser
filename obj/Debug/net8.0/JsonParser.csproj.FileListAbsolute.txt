@@ -1,0 +1,15 @@
+C:\the rood\Backend-studying\steps course\day1\JsonParser\JsonParser\bin\Debug\net8.0\JsonParser.exe
+C:\the rood\Backend-studying\steps course\day1\JsonParser\JsonParser\bin\Debug\net8.0\JsonParser.deps.json
+C:\the rood\Backend-studying\steps course\day1\JsonParser\JsonParser\bin\Debug\net8.0\JsonParser.runtimeconfig.json
+C:\the rood\Backend-studying\steps course\day1\JsonParser\JsonParser\bin\Debug\net8.0\JsonParser.dll
+C:\the rood\Backend-studying\steps course\day1\JsonParser\JsonParser\bin\Debug\net8.0\JsonParser.pdb
+C:\the rood\Backend-studying\steps course\day1\JsonParser\JsonParser\obj\Debug\net8.0\JsonParser.GeneratedMSBuildEditorConfig.editorconfig
+C:\the rood\Backend-studying\steps course\day1\JsonParser\JsonParser\obj\Debug\net8.0\JsonParser.AssemblyInfoInputs.cache
+C:\the rood\Backend-studying\steps course\day1\JsonParser\JsonParser\obj\Debug\net8.0\JsonParser.AssemblyInfo.cs
+C:\the rood\Backend-studying\steps course\day1\JsonParser\JsonParser\obj\Debug\net8.0\JsonParser.csproj.CoreCompileInputs.cache
+C:\the rood\Backend-studying\steps course\day1\JsonParser\JsonParser\obj\Debug\net8.0\JsonParser.dll
+C:\the rood\Backend-studying\steps course\day1\JsonParser\JsonParser\obj\Debug\net8.0\refint\JsonParser.dll
+C:\the rood\Backend-studying\steps course\day1\JsonParser\JsonParser\obj\Debug\net8.0\JsonParser.pdb
+C:\the rood\Backend-studying\steps course\day1\JsonParser\JsonParser\obj\Debug\net8.0\JsonParser.genruntimeconfig.cache
+C:\the rood\Backend-studying\steps course\day1\JsonParser\JsonParser\obj\Debug\net8.0\ref\JsonParser.dll
+C:\the rood\Backend-studying\steps course\day1\JsonParser\JsonParser\obj\Debug\net8.0\JsonParser.sourcelink.json
