@@ -22,6 +22,32 @@ public class JsonParser{
         var _value = _tokens[_index].Value;
         return _value.Contains('.')|| _value.Contains('E')||_value.Contains('e');
     }
+    private bool IsPunct(string value)
+    {
+        return Peek().Type == TokenType.PUNCT && Peek().Value == value;
+    }
+    private List<object> ParseArray()
+    {
+        var array = new List<object>();
+        
+        if(IsPunct("]"))
+        {
+            Consume();
+            return array;
+        }
+        array.Add(ParseValue());
+        while(IsPunct(","))
+        {
+            Consume();
+            array.Add(ParseValue());
+        }
+        if (IsPunct("]"))
+        {
+            Consume();
+            return array;
+        }
+        throw new Exception("Not Expected This Value in The Array");
+    }
     public object ParseValue(){
         if (Peek().Type == TokenType.STRING) return Consume().Value;
         else if (Peek().Type == TokenType.NUMBER)
@@ -29,20 +55,29 @@ public class JsonParser{
             if(IsFloat()) return float.Parse(Consume().Value);
             else return int.Parse(Consume().Value);
         }
-        //to-do: implement array and object parsing
-        else if (Peek().Type == TokenType.TRUE) { 
-            Consume(); 
-            return true; 
+        //todo: implement object parsing
+        //else if(Peek().Type== TokenType.PUNCT && Peek().Value == "{")
+        //{
+
+        //}
+        else if (Peek().Type== TokenType.PUNCT && Peek().Value == "[")
+        {
+            Consume();
+            return ParseArray();
         }
-        else if (Peek().Type == TokenType.FALSE) { 
-            Consume(); 
-            return false; 
+        else if (Peek().Type == TokenType.TRUE) {
+            Consume();
+            return true;
         }
-        else if (Peek().Type == TokenType.NULL) { 
-            Consume(); 
-            return null; 
+        else if (Peek().Type == TokenType.FALSE) {
+            Consume();
+            return false;
         }
-        else 
+        else if (Peek().Type == TokenType.NULL) {
+            Consume();
+            return null;
+        }
+        else
             throw new Exception("Unexpected token: " + Peek().Value);
     }
 
