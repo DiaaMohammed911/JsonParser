@@ -1,11 +1,6 @@
-﻿        //Test("+5");
-        //Test("01");
-        Test(".5");
-        Test("5.");
-        Test("--5");
-        Test("5e+");
+﻿
 
-    static void Test(string json)
+static void Test(string json)
     {
         Console.WriteLine($"JSON: {json}");
 
