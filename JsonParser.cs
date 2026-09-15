@@ -48,6 +48,59 @@ public class JsonParser{
         }
         throw new Exception("Not Expected This Value in The Array");
     }
+    public Dictionary<string, object> ParseObject()
+    {
+        var dic = new Dictionary<string, object>();
+
+        if (IsPunct("}"))
+        {
+            Consume();
+            return dic;
+        }
+
+        while (true)
+        {
+            var key = Peek();
+
+            if (key.Type != TokenType.STRING)
+            {
+                throw new Exception("ERR object key must be a string");
+            }
+
+            Consume();
+
+            if (!IsPunct(":"))
+            {
+                throw new Exception("ERR object key must be followed by a colon");
+            }
+
+            Consume();
+
+            dic.Add(key.Value, ParseValue());
+
+            if (IsPunct(","))
+            {
+                Consume();
+
+                if (IsPunct("}"))
+                {
+                    throw new Exception("ERR trailing comma");
+                }
+
+                continue;
+            }
+
+            break;
+        }
+
+        if (IsPunct("}"))
+        {
+            Consume();
+            return dic;
+        }
+
+        throw new Exception("Not Expected This Value in The Object");
+    }
     public object ParseValue(){
         if (Peek().Type == TokenType.STRING) return Consume().Value;
         else if (Peek().Type == TokenType.NUMBER)
@@ -55,11 +108,11 @@ public class JsonParser{
             if(IsFloat()) return float.Parse(Consume().Value);
             else return int.Parse(Consume().Value);
         }
-        //todo: implement object parsing
-        //else if(Peek().Type== TokenType.PUNCT && Peek().Value == "{")
-        //{
-
-        //}
+        else if (Peek().Type == TokenType.PUNCT && Peek().Value == "{")
+        {
+            Consume();
+            return ParseObject();
+        }
         else if (Peek().Type== TokenType.PUNCT && Peek().Value == "[")
         {
             Consume();
