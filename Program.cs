@@ -1,5 +1,5 @@
 ﻿
-
+Test("{\"a\": [1, 2], \"b\": {\"c\": true}}");
 static void Test(string json)
     {
         Console.WriteLine($"JSON: {json}");
