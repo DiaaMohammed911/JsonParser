@@ -1,9 +1,15 @@
 # JSON Parser in C#
-
-A JSON tokenizer and recursive-descent parser implemented in C#.
-
-The project is built from scratch to understand how JSON parsing works internally,
-from converting raw characters into tokens to building the final JSON structure.
+ 
+A JSON tokenizer and recursive-descent parser implemented in C# from scratch.
+ 
+The project was built to understand how JSON parsing works internally, from converting raw characters into tokens to building the final data structure.
+ 
+## Features
+ 
+- Hand-written tokenizer (no external libraries)
+- Recursive-descent parser
+- Supports all JSON value types: objects, arrays, strings, numbers, `true`, `false`, and `null`
+- Clear error messages for invalid input (missing colon, non-string keys, trailing commas, unexpected tokens)
 
 ## Architecture
 
