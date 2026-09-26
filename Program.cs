@@ -1,5 +1,11 @@
 ﻿
+Test("{\"name\":\"Diaa\",\"age\":22}");
+Test("[1, 2, 3]");
 Test("{\"a\": [1, 2], \"b\": {\"c\": true}}");
+Test("true");
+Test("null");
+Test("[1, [2, [3, [4, [5, 6]]]]]");
+Test("[[[[[1]]]]]");
 static void Test(string json)
     {
         Console.WriteLine($"JSON: {json}");

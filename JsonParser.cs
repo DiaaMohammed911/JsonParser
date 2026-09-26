@@ -31,8 +31,9 @@ public class JsonParser{
         var array = new List<object>();
         
         if(IsPunct("]"))
-        {
+        {            
             Consume();
+            DepthTracker.leave();
             return array;
         }
         array.Add(ParseValue());
@@ -42,8 +43,9 @@ public class JsonParser{
             array.Add(ParseValue());
         }
         if (IsPunct("]"))
-        {
+        {            
             Consume();
+            DepthTracker.leave();
             return array;
         }
         throw new Exception("Not Expected This Value in The Array");
@@ -53,8 +55,9 @@ public class JsonParser{
         var dic = new Dictionary<string, object>();
 
         if (IsPunct("}"))
-        {
+        {            
             Consume();
+            DepthTracker.leave();
             return dic;
         }
 
@@ -94,8 +97,9 @@ public class JsonParser{
         }
 
         if (IsPunct("}"))
-        {
+        {            
             Consume();
+            DepthTracker.leave();
             return dic;
         }
 
@@ -110,11 +114,13 @@ public class JsonParser{
         }
         else if (Peek().Type == TokenType.PUNCT && Peek().Value == "{")
         {
+            DepthTracker.enter();
             Consume();
             return ParseObject();
         }
         else if (Peek().Type== TokenType.PUNCT && Peek().Value == "[")
         {
+            DepthTracker.enter();
             Consume();
             return ParseArray();
         }
