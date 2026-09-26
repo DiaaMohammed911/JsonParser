@@ -260,7 +260,6 @@ public class JsonTokenizer
                 _i++;
                 continue;
             }
-
             sb.Append(c);
             _i++;
         }
