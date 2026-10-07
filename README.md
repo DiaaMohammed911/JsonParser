@@ -10,6 +10,7 @@ The project was built to understand how JSON parsing works internally, from conv
 - Recursive-descent parser
 - Supports all JSON value types: objects, arrays, strings, numbers, `true`, `false`, and `null`
 - Clear error messages for invalid input (missing colon, non-string keys, trailing commas, unexpected tokens)
+- Line and column tracking for invalid JSON errors 
 
 ## Architecture
 
