@@ -5,6 +5,7 @@ using System.Text;
 public enum TokenType
 {
     PUNCT,
+    INVALID,
     STRING,
     NUMBER,
     TRUE,
@@ -18,15 +19,20 @@ public class Token
     public TokenType Type { get; set; }
     public string Value { get; set; }
 
-    public Token(TokenType type, string value)
+    public int Line { get; }
+    public int Column { get; }
+
+    public Token(TokenType type, string value, int line, int column)
     {
         Type = type;
         Value = value;
+        Line = line;
+        Column = column;
     }
 }
 public class JsonTokenizer
 {
-
+    private readonly PositionTracker _pos = new PositionTracker();
     private readonly string _src;
     private int _i = 0;
 
@@ -34,7 +40,27 @@ public class JsonTokenizer
     {
         _src = src;
     }
+    private char Advance()
+    {
+        char c = _src[_i++];
+        _pos.Consume(c);
+        return c;
+    }
+    private static bool IsAsciiDigit(char c) => c >= '0' && c <= '9';
+    private void Advance(int count)
+    {
+        for (int k = 0; k < count; k++)
+            Advance();
+    }
+    private bool TryReadKeyword(string word, TokenType type, int line, int col, List<Token> tokens)
+    {
+        if (string.CompareOrdinal(_src, _i, word, 0, word.Length) != 0)
+            return false;
 
+        Advance(word.Length);
+        tokens.Add(new Token(type, word, line, col));
+        return true;
+    }
     public List<Token> Tokenize()
     {
         var tokens = new List<Token>();
@@ -42,108 +68,90 @@ public class JsonTokenizer
         while (_i < _src.Length)
         {
             char c = _src[_i];
+
+            // position BEFORE consuming the token
+            int line = _pos.Line;
+            int col = _pos.Column;
+
             if (c is ' ' or '\t' or '\n' or '\r')
             {
-                _i++;
+                Advance();
                 continue;
             }
 
             if ("{}[],:".Contains(c))
             {
-                tokens.Add(new Token(TokenType.PUNCT, c.ToString()));
-                _i++;
+                Advance();
+                tokens.Add(new Token(TokenType.PUNCT, c.ToString(), line, col));
                 continue;
             }
 
             if (c == '"')
             {
-                tokens.Add(ReadString());
+                tokens.Add(ReadString(line, col));
                 continue;
             }
 
-            if (c == '-' || char.IsDigit(c))
+            if (c == '-' || IsAsciiDigit(c))
             {
-                tokens.Add(ReadNumber());
+                tokens.Add(ReadNumber(line, col));
                 continue;
             }
 
-            if (_src.AsSpan(_i).StartsWith("true"))
-            {
-                tokens.Add(new Token(TokenType.TRUE, "true"));
-                _i += 4;
-                continue;
-            }
+            if (TryReadKeyword("true", TokenType.TRUE, line, col, tokens)) continue;
+            if (TryReadKeyword("false", TokenType.FALSE, line, col, tokens)) continue;
+            if (TryReadKeyword("null", TokenType.NULL, line, col, tokens)) continue;
 
-            if (_src.AsSpan(_i).StartsWith("false"))
-            {
-                tokens.Add(new Token(TokenType.FALSE, "false"));
-                _i += 5;
-                continue;
-            }
-
-            if (_src.AsSpan(_i).StartsWith("null"))
-            {
-                tokens.Add(new Token(TokenType.NULL, "null"));
-                _i += 4;
-                continue;
-            }
-
-            throw new Exception(
-                $"unexpected character '{c}' at position {_i}"
-            );
+            // Unknown character: don't throw here. "123abc" must be reported by the
+            // parser as "trailing data" at 'a', not as an "unexpected character".
+            Advance();
+            tokens.Add(new Token(TokenType.INVALID, c.ToString(), line, col));
         }
 
-        tokens.Add(new Token(TokenType.EOF, ""));
+        tokens.Add(new Token(TokenType.EOF, "", _pos.Line, _pos.Column));
         return tokens;
     }
 
-    private Token ReadNumber()
+    private Token ReadNumber(int line, int col)
     {
         int start = _i;
 
         if (_src[_i] == '-')
-            _i++;
+            Advance();
 
         while (_i < _src.Length && JsonNumberValidator.IsDigit(_src[_i]))
-            _i++;
+            Advance();
 
         if (_i < _src.Length && _src[_i] == '.')
         {
-            _i++;
+            Advance();
 
             while (_i < _src.Length && JsonNumberValidator.IsDigit(_src[_i]))
-                _i++;
+                Advance();
         }
 
-        if (_i < _src.Length &&
-            (_src[_i] == 'e' || _src[_i] == 'E'))
+        if (_i < _src.Length && (_src[_i] == 'e' || _src[_i] == 'E'))
         {
-            _i++;
+            Advance();
 
-            if (_i < _src.Length &&
-                (_src[_i] == '+' || _src[_i] == '-'))
-            {
-                _i++;
-            }
+            if (_i < _src.Length && (_src[_i] == '+' || _src[_i] == '-'))
+                Advance();
 
             while (_i < _src.Length && JsonNumberValidator.IsDigit(_src[_i]))
-                _i++;
+                Advance();
         }
 
         string value = _src[start.._i];
         if (JsonNumberValidator.IsValid(value))
-        {
+            return new Token(TokenType.NUMBER, value, line, col);
 
-            return new Token(TokenType.NUMBER, value);
-        }
-        throw new Exception("invalid number");
+        throw new JsonParseException("invalid number", line, col);
     }
 
-    private Token ReadString()
+    private Token ReadString(int startLine, int startCol)
     {
-
         var sb = new StringBuilder();
-        _i++;
+        Advance(); // opening quote
 
         while (_i < _src.Length)
         {
@@ -151,119 +159,98 @@ public class JsonTokenizer
 
             if (c == '"')
             {
-                _i++;
-                return new Token(TokenType.STRING, sb.ToString()); 
+                Advance();
+                return new Token(TokenType.STRING, sb.ToString(), startLine, startCol);
             }
 
             if (c == '\\')
             {
-                _i++;
-
-                if (_i >= _src.Length)
-                    throw new Exception("unterminated string");
-
-                char escaped = _src[_i];
-
-                switch (escaped)
-                {
-                    case '"':
-                        sb.Append('"');
-                        break;
-
-                    case '\\':
-                        sb.Append('\\');
-                        break;
-
-                    case '/':
-                        sb.Append('/');
-                        break;
-
-                    case 'n':
-                        sb.Append('\n');
-                        break;
-
-                    case 'r':
-                        sb.Append('\r');
-                        break;
-
-                    case 't':
-                        sb.Append('\t');
-                        break;
-
-                    case 'b':
-                        sb.Append('\b');
-                        break;
-
-                    case 'f':
-                        sb.Append('\f');
-                        break;
-                    case 'u':
-                        if (_i + 10 < _src.Length &&
-                            _src[_i + 5] == '\\' &&
-                            _src[_i + 6] == 'u')
-                        {
-                            string pair1 = _src[(_i + 1)..(_i + 5)];
-                            string pair2 = _src[(_i + 7)..(_i + 11)];
-
-                            if (!int.TryParse(
-                                    pair1,
-                                    System.Globalization.NumberStyles.HexNumber,
-                                    null,
-                                    out int hi))
-                                throw new Exception("invalid unicode escape");
-
-                            if (!int.TryParse(
-                                    pair2,
-                                    System.Globalization.NumberStyles.HexNumber,
-                                    null,
-                                    out int lo))
-                                throw new Exception("invalid unicode escape");
-                            if (hi < 0xD800 || hi > 0xDBFF)
-                                throw new Exception("invalid high surrogate");
-                            if (lo < 0xDC00 || lo > 0xDFFF)
-                                throw new Exception("invalid low surrogate");
-
-                            int codePoint =
-                                0x10000 +
-                                ((hi - 0xD800) << 10) +
-                                (lo - 0xDC00);
-
-                            sb.Append(char.ConvertFromUtf32(codePoint));
-
-                            _i += 10;
-                        }
-                        else
-                        {
-                            if (_i + 4 >= _src.Length)
-                                throw new Exception("unterminated string");
-
-                            string hex = _src[(_i + 1)..(_i + 5)];
-
-                            if (!int.TryParse(hex,System.Globalization.NumberStyles.HexNumber,null,out int codePoint))
-                                throw new Exception("invalid unicode escape");
-                            if (codePoint >= 0xD800 && codePoint <= 0xDBFF)
-                                throw new Exception("unpaired high surrogate");
-                            if (codePoint >= 0xDC00 && codePoint <= 0xDFFF)
-                                throw new Exception("unpaired low surrogate");
-
-                            sb.Append(char.ConvertFromUtf32(codePoint));
-
-                            _i += 4;
-                        }
-                        break;
-                    default:
-                        throw new Exception(
-                            $"invalid escape '\\{escaped}'"
-                        );
-                }
-
-                _i++;
+                ReadEscape(sb);
                 continue;
             }
-            sb.Append(c);
-            _i++;
+
+            if (c < 0x20)
+                throw new JsonParseException("control character in string", _pos.Line, _pos.Column);
+
+            sb.Append(Advance());
         }
 
-        throw new Exception("unterminated string");
+        throw new JsonParseException("unterminated string", startLine, startCol);
+    }
+    private void ReadEscape(StringBuilder sb)
+    {
+        int line = _pos.Line;
+        int col = _pos.Column;
+
+        Advance(); // the backslash
+
+        if (_i >= _src.Length)
+            throw new JsonParseException("unterminated string", line, col);
+
+        char escaped = Advance();
+
+        switch (escaped)
+        {
+            case '"': sb.Append('"'); break;
+            case '\\': sb.Append('\\'); break;
+            case '/': sb.Append('/'); break;
+            case 'n': sb.Append('\n'); break;
+            case 'r': sb.Append('\r'); break;
+            case 't': sb.Append('\t'); break;
+            case 'b': sb.Append('\b'); break;
+            case 'f': sb.Append('\f'); break;
+            case 'u': ReadUnicodeEscape(sb, line, col); break;
+            default:
+                throw new JsonParseException($"invalid escape '\\{escaped}'", line, col);
+        }
+    }
+    // Called right after "\u" has been consumed.
+    private void ReadUnicodeEscape(StringBuilder sb, int line, int col)
+    {
+        int first = ReadHex4(line, col);
+
+        if (first >= 0xD800 && first <= 0xDBFF)
+        {
+            // A high surrogate must be followed by \uDC00-\uDFFF.
+            if (_i + 1 < _src.Length && _src[_i] == '\\' && _src[_i + 1] == 'u')
+            {
+                int pairLine = _pos.Line;
+                int pairCol = _pos.Column;
+
+                Advance(2); // "\u"
+                int second = ReadHex4(pairLine, pairCol);
+
+                if (second < 0xDC00 || second > 0xDFFF)
+                    throw new JsonParseException("invalid low surrogate", pairLine, pairCol);
+
+                sb.Append((char)first);
+                sb.Append((char)second);
+                return;
+            }
+
+            throw new JsonParseException("unpaired high surrogate", line, col);
+        }
+
+        if (first >= 0xDC00 && first <= 0xDFFF)
+            throw new JsonParseException("unpaired low surrogate", line, col);
+
+        sb.Append((char)first);
+    }
+    private int ReadHex4(int line, int col)
+    {
+        if (_i + 4 > _src.Length)
+            throw new JsonParseException("unterminated string", line, col);
+
+        int value = 0;
+        for (int k = 0; k < 4; k++)
+        {
+            char h = _src[_i];
+            if (!Uri.IsHexDigit(h))
+                throw new JsonParseException("invalid unicode escape", line, col);
+
+            value = (value << 4) | Uri.FromHex(h);
+            Advance();
+        }
+        return value;
     }
 }
